@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RSS Okuyucu</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: #0f172a;
+      color: #e2e8f0;
+      padding: 16px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      text-align: center;
+      margin: 16px 0 24px;
+      color: #38bdf8;
+      letter-spacing: 1px;
+    }
+
+    h2 {
+      font-size: 1rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    h3 {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin: 14px 0 8px;
+    }
+
+    section {
+      background-color: #1e293b;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    input[type="url"],
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background-color: #0f172a;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+      outline: none;
+    }
+
+    input:focus { border-color: #38bdf8; }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+
+    button:active { opacity: 0.7; }
+
+    #add-rss-btn, #add-keyword-btn {
+      background-color: #0ea5e9;
+      color: white;
+      width: 100%;
+    }
+
+    #fetch-btn {
+      background-color: #22c55e;
+      color: white;
+      width: 100%;
+      font-size: 1.05rem;
+      padding: 14px;
+    }
+
+    ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    ul li {
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    ul li span.delete-btn {
+      color: #f87171;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    #news-list p { color: #64748b; font-size: 0.9rem; }
+
+    .news-card {
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      text-decoration: none;
+      display: block;
+      transition: border-color 0.2s;
+    }
+
+    .news-card:hover { border-color: #38bdf8; }
+
+    .news-card .news-source {
+      font-size: 0.75rem;
+      color: #38bdf8;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .news-card .news-title {
+      font-size: 0.95rem;
+      color: #e2e8f0;
+      line-height: 1.45;
+      margin-bottom: 6px;
+    }
+
+    .news-card .news-date { font-size: 0.75rem; color: #64748b; }
+
+    #loading-msg {
+      text-align: center;
+      color: #38bdf8;
+      font-size: 0.9rem;
+      padding: 12px 0;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📰 RSS Okuyucu</h1>
+
+  <section>
+    <h2>RSS Kaynağı Ekle</h2>
+    <input type="url" id="rss-url-input" placeholder="https://example.com/feed.xml" />
+    <button id="add-rss-btn">Ekle</button>
+    <h3>Kayıtlı Kaynaklar:</h3>
+    <ul id="rss-list"></ul>
+  </section>
+
+  <section>
+    <h2>Anahtar Kelime Ekle</h2>
+    <input type="text" id="keyword-input" placeholder="örn: İran, ABD, Ekonomi" />
+    <button id="add-keyword-btn">Ekle</button>
+    <h3>Kayıtlı Kelimeler:</h3>
+    <ul id="keyword-list"></ul>
+  </section>
+
+  <section>
+    <button id="fetch-btn">🔄 Haberleri Getir</button>
+  </section>
+
+  <section>
+    <h2>Haberler</h2>
+    <div id="loading-msg">⏳ Haberler yükleniyor...</div>
+    <div id="news-list">
+      <p>Henüz haber yüklenmedi.</p>
+    </div>
+  </section>
+
+  <script>
+
+    // === localStorage OKUMA / YAZMA ===
+
+    function getKeywords() {
+      return JSON.parse(localStorage.getItem('keywords') || '[]');
+    }
+
+    function getRssSources() {
+      return JSON.parse(localStorage.getItem('rssSources') || '[]');
+    }
+
+    function saveKeywords(list) {
+      localStorage.setItem('keywords', JSON.stringify(list));
+    }
+
+    function saveRssSources(list) {
+      localStorage.setItem('rssSources', JSON.stringify(list));
+    }
+
+    // === RSS KAYNAĞI EKLE ===
+
+    document.getElementById('add-rss-btn').addEventListener('click', function () {
+      const input = document.getElementById('rss-url-input');
+      const url = input.value.trim();
+
+      if (!url) { alert('Lütfen bir RSS linki gir.'); return; }
+
+      const list = getRssSources();
+      if (list.includes(url)) { alert('Bu kaynak zaten ekli.'); return; }
+
+      list.push(url);
+      saveRssSources(list);
+      input.value = '';
+      renderRssList();
+    });
+
+    // === ANAHTAR KELİME EKLE ===
+
+    document.getElementById('add-keyword-btn').addEventListener('click', function () {
+      const input = document.getElementById('keyword-input');
+      const keyword = input.value.trim();
+
+      if (!keyword) { alert('Lütfen bir anahtar kelime gir.'); return; }
+
+      const list = getKeywords();
+      if (list.includes(keyword.toLowerCase())) { alert('Bu kelime zaten ekli.'); return; }
+
+      list.push(keyword.toLowerCase());
+      saveKeywords(list);
+      input.value = '';
+      renderKeywordList();
+    });
+
+    // === RSS LİSTESİNİ GÖSTER ===
+
+    function renderRssList() {
+      const list = getRssSources();
+      const ul = document.getElementById('rss-list');
+      ul.innerHTML = '';
+
+      if (list.length === 0) {
+        ul.innerHTML = '<li style="border:none; color:#64748b;">Henüz kaynak eklenmedi.</li>';
+        return;
+      }
+
+      list.forEach(function (url, index) {
+        const li = document.createElement('li');
+        const shortUrl = url.replace('https://', '').replace('http://', '').substring(0, 35) + '...';
+        li.innerHTML = `
+          <span title="${url}">${shortUrl}</span>
+          <span class="delete-btn" data-index="${index}" data-type="rss">✕</span>
+        `;
+        ul.appendChild(li);
+      });
+
+      ul.querySelectorAll('.delete-btn[data-type="rss"]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const i = parseInt(this.getAttribute('data-index'));
+          const list = getRssSources();
+          list.splice(i, 1);
+          saveRssSources(list);
+          renderRssList();
+        });
+      });
+    }
+
+    // === KELİME LİSTESİNİ GÖSTER ===
+
+    function renderKeywordList() {
+      const list = getKeywords();
+      const ul = document.getElementById('keyword-list');
+      ul.innerHTML = '';
+
+      if (list.length === 0) {
+        ul.innerHTML = '<li style="border:none; color:#64748b;">Henüz kelime eklenmedi.</li>';
+        return;
+      }
+
+      list.forEach(function (keyword, index) {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span>${keyword}</span>
+          <span class="delete-btn" data-index="${index}" data-type="keyword">✕</span>
+        `;
+        ul.appendChild(li);
+      });
+
+      ul.querySelectorAll('.delete-btn[data-type="keyword"]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const i = parseInt(this.getAttribute('data-index'));
+          const list = getKeywords();
+          list.splice(i, 1);
+          saveKeywords(list);
+          renderKeywordList();
+        });
+      });
+    }
+
+// === RSS ÇEKME — ÇOKLU SERVİS ===
+
+    async function fetchRSS(rssUrl) {
+
+      // 1. DENEME: rss2json
+      try {
+        const r = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl));
+        if (r.ok) {
+          const d = await r.json();
+          if (d.status === 'ok' && d.items && d.items.length > 0) {
+            return { type: 'rss2json', data: d };
+          }
+        }
+      } catch(e) { console.warn('rss2json başarısız'); }
+
+      // 2. DENEME: allorigins (XML olarak çek)
+      try {
+        const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(rssUrl));
+        if (r.ok) {
+          const d = await r.json();
+          if (d.contents && d.contents.includes('<item')) {
+            return { type: 'xml', data: d.contents };
+          }
+        }
+      } catch(e) { console.warn('allorigins başarısız'); }
+
+      // 3. DENEME: feedscraper (yedek)
+      try {
+        const r = await fetch('https://feedscraper.com/api/v1?url=' + encodeURIComponent(rssUrl));
+        if (r.ok) {
+          const d = await r.json();
+          if (d.items && d.items.length > 0) {
+            return { type: 'feedscraper', data: d };
+          }
+        }
+      } catch(e) { console.warn('feedscraper başarısız'); }
+
+      throw new Error('Tüm servisler başarısız: ' + rssUrl);
+    }
+
+ // === PARSE — TİPE GÖRE İŞLE ===
+
+    function parseRSS(result, sourceUrl) {
+      const articles = [];
+
+      // rss2json formatı
+      if (result.type === 'rss2json') {
+        const data = result.data;
+        const sourceName = data.feed && data.feed.title ? data.feed.title : sourceUrl;
+        data.items.forEach(function(item) {
+          articles.push({
+            title: item.title || '',
+            link: item.link || '#',
+            pubDate: item.pubDate || '',
+            description: item.description || item.content || '',
+            sourceName: sourceName
+          });
+        });
+        return articles;
+      }
+
+      // XML formatı (allorigins'ten gelen)
+      if (result.type === 'xml') {
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(result.data, 'text/xml');
+        const channelTitle = xml.querySelector('channel > title');
+        const sourceName = channelTitle ? channelTitle.textContent.trim() : sourceUrl;
+        xml.querySelectorAll('item').forEach(function(item) {
+          const getText = function(tag) {
+            const el = item.querySelector(tag);
+            return el ? el.textContent.trim() : '';
+          };
+          articles.push({
+            title: getText('title'),
+            link: getText('link'),
+            pubDate: getText('pubDate'),
+            description: getText('description'),
+            sourceName: sourceName
+          });
+        });
+        return articles;
+      }
+
+      // feedscraper formatı
+      if (result.type === 'feedscraper') {
+        const data = result.data;
+        const sourceName = data.title || sourceUrl;
+        data.items.forEach(function(item) {
+          articles.push({
+            title: item.title || '',
+            link: item.url || item.link || '#',
+            pubDate: item.date_published || item.pubDate || '',
+            description: item.summary || item.content || '',
+            sourceName: sourceName
+          });
+        });
+        return articles;
+      }
+
+      return articles;
+    }
+
+    // === FİLTRELE ===
+
+    function filterArticles(articles, keywords) {
+      if (keywords.length === 0) return articles;
+      return articles.filter(function (article) {
+        const haystack = (article.title + ' ' + article.description).toLowerCase();
+        return keywords.some(function (kw) {
+          return haystack.includes(kw.toLowerCase());
+        });
+      });
+    }
+
+    // === HABERLERİ GÖSTER ===
+
+    function renderNews(articles) {
+      const container = document.getElementById('news-list');
+      container.innerHTML = '';
+
+      if (articles.length === 0) {
+        container.innerHTML = '<p>Anahtar kelimelerinize uyan haber bulunamadı.</p>';
+        return;
+      }
+
+      articles.forEach(function (article) {
+        let dateStr = '';
+        if (article.pubDate) {
+          const d = new Date(article.pubDate);
+          if (!isNaN(d)) {
+            dateStr = d.toLocaleString('tr-TR', {
+              day: '2-digit', month: 'long', year: 'numeric',
+              hour: '2-digit', minute: '2-digit'
+            });
+          }
+        }
+
+        const card = document.createElement('a');
+        card.className = 'news-card';
+        card.href = article.link;
+        card.target = '_blank';
+        card.rel = 'noopener noreferrer';
+        card.innerHTML = `
+          <div class="news-source">${article.sourceName}</div>
+          <div class="news-title">${article.title}</div>
+          ${dateStr ? '<div class="news-date">🕐 ' + dateStr + '</div>' : ''}
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // === HABERLERİ GETİR BUTONU ===
+
+    document.getElementById('fetch-btn').addEventListener('click', async function () {
+      const sources = getRssSources();
+      const keywords = getKeywords();
+
+      if (sources.length === 0) {
+        alert('Önce en az bir RSS kaynağı ekle.');
+        return;
+      }
+
+      const loadingMsg = document.getElementById('loading-msg');
+      const container = document.getElementById('news-list');
+      loadingMsg.style.display = 'block';
+      container.innerHTML = '';
+
+      let allArticles = [];
+      const errors = [];
+
+      const promises = sources.map(async function (url) {
+        try {
+          const data = await fetchRSS(url);
+          const articles = parseRSS(data, url);
+          allArticles = allArticles.concat(articles);
+        } catch (e) {
+          errors.push(url);
+          console.error(e);
+        }
+      });
+
+      await Promise.all(promises);
+
+      allArticles.sort(function (a, b) {
+        return new Date(b.pubDate) - new Date(a.pubDate);
+      });
+
+      const filtered = filterArticles(allArticles, keywords);
+
+      loadingMsg.style.display = 'none';
+      renderNews(filtered);
+
+      if (errors.length > 0) {
+        console.warn('Yüklenemeyen kaynaklar:', errors);
+      }
+    });
+
+    // === SAYFA AÇILINCA LİSTELERİ YÜKLE ===
+
+    renderRssList();
+    renderKeywordList();
+
+  </script>
+</body>
+</html>
