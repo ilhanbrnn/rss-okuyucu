@@ -305,28 +305,25 @@
 
 // === RSS ÇEKME — ÇOKLU SERVİS ===
 
-    async function fetchRSS(rssUrl) {
+        async function fetchRSS(rssUrl) {
+      const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(rssUrl));
+      if (!r.ok) throw new Error('allorigins yanıt vermedi: ' + r.status);
 
-      // 1. DENEME: rss2json
-      try {
-        const r = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl));
-        if (r.ok) {
-          const d = await r.json();
-          if (d.status === 'ok' && d.items && d.items.length > 0) {
-            return { type: 'rss2json', data: d };
-          }
-        }
-      } catch(e) { console.warn('rss2json başarısız'); }
+      const d = await r.json();
+      let contents = d.contents;
 
-      // 2. DENEME: allorigins (XML olarak çek)
-      try {
-        const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(rssUrl));
-        if (r.ok) {
-          const d = await r.json();
-          if (d.contents && d.contents.includes('<item')) {
-            return { type: 'xml', data: d.contents };
-          }
-        }
+      if (!contents) throw new Error('İçerik boş geldi');
+
+      // Base64 encoded gelirse çöz (Hürriyet, Cumhuriyet gibi)
+      if (contents.startsWith('data:')) {
+        const base64Part = contents.split(',')[1];
+        contents = atob(base64Part);
+      }
+
+      if (!contents.includes('<item')) throw new Error('RSS item bulunamadı');
+
+      return { type: 'xml', data: contents };
+    }
       } catch(e) { console.warn('allorigins başarısız'); }
 
       // 3. DENEME: feedscraper (yedek)
