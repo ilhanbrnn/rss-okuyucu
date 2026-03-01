@@ -1,0 +1,39 @@
+const CACHE_NAME = 'rss-okuyucu-v1';
+const ASSETS = [
+  '/rss-okuyucu/',
+  '/rss-okuyucu/index.html',
+  '/rss-okuyucu/manifest.json'
+];
+
+// Kurulum — dosyaları önbelleğe al
+self.addEventListener('install', function(e) {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll(ASSETS);
+    })
+  );
+});
+
+// Aktivasyon — eski önbellekleri temizle
+self.addEventListener('activate', function(e) {
+  e.waitUntil(
+    caches.keys().then(function(keys) {
+      return Promise.all(
+        keys.filter(function(key) {
+          return key !== CACHE_NAME;
+        }).map(function(key) {
+          return caches.delete(key);
+        })
+      );
+    })
+  );
+});
+
+// Fetch — önce ağdan dene, olmazsa önbellekten sun
+self.addEventListener('fetch', function(e) {
+  e.respondWith(
+    fetch(e.request).catch(function() {
+      return caches.match(e.request);
+    })
+  );
+});
