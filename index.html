@@ -3,98 +3,290 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RSS Okuyucu</title>
+  <title>Haber Dedektifi · RSS İzleyici</title>
+
   <link rel="manifest" href="manifest.json" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="RSS" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-title" content="Haber Dedektifi" />
+  <meta name="theme-color" content="#1a1a1a" />
   <link rel="apple-touch-icon" href="icon-192.png" />
+
   <style>
-    /* Stiller aynen korunabilir */
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background-color: #0f172a;
-      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
+      background-color: #121212; /* Koyu zemin */
+      color: #e0e0e0;
       padding: 16px;
-      max-width: 680px;
+      max-width: 720px;
       margin: 0 auto;
+      line-height: 1.5;
     }
-    h1 { font-size: 1.6rem; text-align: center; margin: 16px 0 24px; color: #38bdf8; letter-spacing: 1px; }
-    h2 { font-size: 1rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-    h3 { font-size: 0.85rem; color: #64748b; margin: 14px 0 8px; }
-    section { background-color: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+
+    /* Başlık – yeni turuncu tonlarında */
+    h1 {
+      font-size: 2rem;
+      text-align: center;
+      margin: 16px 0 24px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      background: linear-gradient(135deg, #f5981b, #e9411a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    h2 {
+      font-size: 1rem;
+      color: #f5981b; /* Turuncu başlık */
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+      border-left: 4px solid #e9411a;
+      padding-left: 10px;
+    }
+
+    h3 {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin: 14px 0 6px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    section {
+      background-color: #1e1e1e;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+      border: 1px solid #333;
+    }
+
     input[type="text"] {
-      width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155;
-      background-color: #0f172a; color: #e2e8f0; font-size: 0.95rem; margin-bottom: 8px; outline: none;
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 40px;
+      border: 1px solid #444;
+      background-color: #2a2a2a;
+      color: #f0f0f0;
+      font-size: 1rem;
+      margin-bottom: 12px;
+      outline: none;
+      transition: border 0.2s, box-shadow 0.2s;
     }
-    input:focus { border-color: #38bdf8; }
+
+    input:focus {
+      border-color: #f5981b;
+      box-shadow: 0 0 0 3px rgba(245, 152, 27, 0.3);
+    }
+
     button {
-      padding: 10px 20px; border: none; border-radius: 8px; font-size: 0.95rem;
-      cursor: pointer; font-weight: 600; transition: opacity 0.2s;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 40px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
-    button:active { opacity: 0.7; }
-    #add-rss-btn, #add-keyword-btn { background-color: #0ea5e9; color: white; width: 100%; }
-    #fetch-btn { background-color: #22c55e; color: white; width: 100%; font-size: 1.05rem; padding: 14px; }
-    ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+
+    button:active { transform: scale(0.97); }
+
+    /* Birincil buton (turuncu) */
+    .btn-primary {
+      background: linear-gradient(145deg, #f5981b, #e96a1a);
+      color: white;
+      width: 100%;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(145deg, #ffa42b, #f57a1a);
+      box-shadow: 0 6px 12px rgba(233, 65, 26, 0.4);
+    }
+
+    /* İkincil buton (kırmızımsı turuncu) */
+    .btn-secondary {
+      background: linear-gradient(145deg, #e9411a, #d4320d);
+      color: white;
+      width: 100%;
+    }
+    .btn-secondary:hover {
+      background: linear-gradient(145deg, #fa4f2a, #e63910);
+      box-shadow: 0 6px 12px rgba(233, 65, 26, 0.5);
+    }
+
+    #fetch-btn {
+      background: linear-gradient(145deg, #f5981b, #e9411a);
+      color: white;
+      width: 100%;
+      font-size: 1.2rem;
+      padding: 16px;
+      letter-spacing: 1px;
+    }
+
+    ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
     ul li {
-      background-color: #0f172a; border: 1px solid #334155; border-radius: 20px;
-      padding: 5px 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;
+      background-color: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 30px;
+      padding: 6px 16px 6px 20px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
     }
-    ul li span.delete-btn { color: #f87171; cursor: pointer; font-weight: bold; font-size: 1rem; }
-    #news-list p { color: #64748b; font-size: 0.9rem; }
+    ul li:hover { background-color: #333; }
+
+    ul li span.delete-btn {
+      color: #e9411a;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.2rem;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #1e1e1e;
+      transition: background 0.2s, color 0.2s;
+    }
+    ul li span.delete-btn:hover {
+      background: #e9411a;
+      color: white;
+    }
+
+    /* Haber kartları */
     .news-card {
-      background-color: #0f172a; border: 1px solid #334155; border-radius: 12px;
-      padding: 14px; margin-bottom: 12px; text-decoration: none; display: block; transition: border-color 0.2s;
+      background-color: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 16px;
+      text-decoration: none;
+      display: block;
+      transition: all 0.2s;
+      border-left: 5px solid #f5981b;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
     }
-    .news-card:hover { border-color: #38bdf8; }
-    .news-card .news-source { font-size: 0.75rem; color: #38bdf8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .news-card .news-title { font-size: 0.95rem; color: #e2e8f0; line-height: 1.45; margin-bottom: 6px; }
-    .news-card .news-date { font-size: 0.75rem; color: #64748b; }
-    #loading-msg { text-align: center; color: #38bdf8; font-size: 0.9rem; padding: 12px 0; display: none; }
+
+    .news-card:hover {
+      border-color: #e9411a;
+      border-left-width: 8px;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px rgba(233, 65, 26, 0.2);
+    }
+
+    .news-card .news-source {
+      font-size: 0.75rem;
+      color: #f5981b;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 600;
+    }
+
+    .news-card .news-title {
+      font-size: 1.05rem;
+      color: #fff;
+      line-height: 1.5;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    .news-card .news-date {
+      font-size: 0.75rem;
+      color: #888;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    #loading-msg {
+      text-align: center;
+      color: #f5981b;
+      font-size: 1rem;
+      padding: 20px 0;
+      display: none;
+      font-weight: 500;
+    }
+
+    .info-text {
+      color: #777;
+      font-size: 0.8rem;
+      margin-top: 8px;
+      font-style: italic;
+    }
+
+    /* Küçük ipucu */
+    .hint {
+      color: #f5981b;
+      font-size: 0.8rem;
+      margin-top: 4px;
+      opacity: 0.8;
+    }
   </style>
 </head>
 <body>
-  <h1>📰 RSS Okuyucu</h1>
 
+  <h1>🕵️ Haber Dedektifi</h1>
+
+  <!-- RSS Kaynağı Ekle -->
   <section>
-    <h2>RSS Kaynağı Ekle</h2>
-    <input type="text" id="rss-url-input" placeholder="https://example.com/feed.xml" />
-    <button id="add-rss-btn">Ekle</button>
-    <h3>Kayıtlı Kaynaklar:</h3>
+    <h2>📡 RSS Kaynağı Ekle</h2>
+    <input type="text" id="rss-url-input" placeholder="https://site.com/feed.xml, https://diger.com/rss" />
+    <button class="btn-primary" id="add-rss-btn">➕ Toplu Ekle</button>
+    <div class="hint">✨ Birden fazla kaynağı virgülle ayırarak ekleyebilirsin.</div>
+    <h3>📌 Kayıtlı Kaynaklar:</h3>
     <ul id="rss-list"></ul>
   </section>
 
+  <!-- Anahtar Kelime Ekle -->
   <section>
-    <h2>Anahtar Kelime Ekle</h2>
-    <input type="text" id="keyword-input" placeholder="örn: İran, ABD, Ekonomi" />
-    <button id="add-keyword-btn">Ekle</button>
-    <h3>Kayıtlı Kelimeler:</h3>
+    <h2>🔑 Anahtar Kelime Ekle</h2>
+    <input type="text" id="keyword-input" placeholder="örnek: iran, abd, israil, savaş" />
+    <button class="btn-secondary" id="add-keyword-btn">➕ Toplu Ekle</button>
+    <div class="hint">✨ Kelimeleri virgülle ayırarak toplu ekle.</div>
+    <h3>📌 Kayıtlı Kelimeler:</h3>
     <ul id="keyword-list"></ul>
   </section>
 
+  <!-- Haber Getir Butonu -->
   <section>
-    <button id="fetch-btn">🔄 Haberleri Getir</button>
+    <button id="fetch-btn">🚀 HABERLERİ TARA</button>
   </section>
 
+  <!-- Haber Listesi -->
   <section>
-    <h2>Haberler</h2>
-    <div id="loading-msg">⏳ Haberler yükleniyor...</div>
-    <div id="news-list"><p>Henüz haber yüklenmedi.</p></div>
+    <h2>📰 BULUNAN HABERLER</h2>
+    <div id="loading-msg">⏳ Haberler yükleniyor... (birkaç saniye sürebilir)</div>
+    <div id="news-list">
+      <p style="color:#777; text-align:center;">Henüz haber yüklenmedi. Yukarıdaki butona tıkla!</p>
+    </div>
   </section>
 
   <script>
     (function() {
-      // Tüm kod DOM hazır olduğunda çalışsın
       document.addEventListener('DOMContentLoaded', function() {
-        // === localStorage yardımcıları ===
+        // === localStorage işlevleri ===
         const getKeywords = () => JSON.parse(localStorage.getItem('keywords') || '[]');
         const getRssSources = () => JSON.parse(localStorage.getItem('rssSources') || '[]');
         const saveKeywords = (list) => localStorage.setItem('keywords', JSON.stringify(list));
         const saveRssSources = (list) => localStorage.setItem('rssSources', JSON.stringify(list));
 
-        // === DOM elemanlarını seç ===
+        // === DOM elemanları ===
         const rssInput = document.getElementById('rss-url-input');
         const keywordInput = document.getElementById('keyword-input');
         const addRssBtn = document.getElementById('add-rss-btn');
@@ -105,35 +297,74 @@
         const loadingMsg = document.getElementById('loading-msg');
         const newsContainer = document.getElementById('news-list');
 
-        // Butonlar bulunamazsa hata fırlat (debug için)
-        if (!addRssBtn || !addKeywordBtn || !fetchBtn) {
-          console.error('Kritik butonlar bulunamadı!');
-          return;
-        }
-
-        // === RSS kaynağı ekleme ===
+        // === TOPLU RSS EKLE (virgülle ayır) ===
         addRssBtn.addEventListener('click', function() {
-          const url = rssInput.value.trim();
-          if (!url) { alert('Lütfen bir RSS linki gir.'); return; }
-          const list = getRssSources();
-          if (list.includes(url)) { alert('Bu kaynak zaten ekli.'); return; }
-          list.push(url);
-          saveRssSources(list);
-          rssInput.value = '';
-          renderRssList();
+          const raw = rssInput.value.trim();
+          if (!raw) { alert('Lütfen bir veya birden fazla RSS linki gir.'); return; }
+
+          const items = raw.split(',').map(s => s.trim()).filter(s => s.length > 0);
+          if (items.length === 0) { alert('Geçerli bir RSS linki gir.'); return; }
+
+          const currentList = getRssSources();
+          const added = [];
+          const alreadyExist = [];
+
+          items.forEach(item => {
+            if (currentList.includes(item)) {
+              alreadyExist.push(item);
+            } else {
+              currentList.push(item);
+              added.push(item);
+            }
+          });
+
+          if (added.length > 0) {
+            saveRssSources(currentList);
+            rssInput.value = '';
+            renderRssList();
+            alert(`✅ ${added.length} yeni RSS kaynağı eklendi.`);
+          } else {
+            alert('⚠️ Girilen tüm kaynaklar zaten mevcut.');
+          }
+
+          if (alreadyExist.length > 0) {
+            console.log('Zaten mevcut olanlar:', alreadyExist);
+          }
         });
 
-        // === Anahtar kelime ekleme ===
+        // === TOPLU ANAHTAR KELİME EKLE (virgülle ayır) ===
         addKeywordBtn.addEventListener('click', function() {
-          let keyword = keywordInput.value.trim();
-          if (!keyword) { alert('Lütfen bir anahtar kelime gir.'); return; }
-          const list = getKeywords();
-          keyword = keyword.toLowerCase();
-          if (list.includes(keyword)) { alert('Bu kelime zaten ekli.'); return; }
-          list.push(keyword);
-          saveKeywords(list);
-          keywordInput.value = '';
-          renderKeywordList();
+          let raw = keywordInput.value.trim();
+          if (!raw) { alert('Lütfen bir veya birden fazla anahtar kelime gir.'); return; }
+
+          const items = raw.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+          if (items.length === 0) { alert('Geçerli bir anahtar kelime gir.'); return; }
+
+          const currentList = getKeywords();
+          const added = [];
+          const alreadyExist = [];
+
+          items.forEach(item => {
+            if (currentList.includes(item)) {
+              alreadyExist.push(item);
+            } else {
+              currentList.push(item);
+              added.push(item);
+            }
+          });
+
+          if (added.length > 0) {
+            saveKeywords(currentList);
+            keywordInput.value = '';
+            renderKeywordList();
+            alert(`✅ ${added.length} yeni anahtar kelime eklendi.`);
+          } else {
+            alert('⚠️ Girilen tüm kelimeler zaten mevcut.');
+          }
+
+          if (alreadyExist.length > 0) {
+            console.log('Zaten mevcut olanlar:', alreadyExist);
+          }
         });
 
         // === RSS listesini render et ===
@@ -141,12 +372,12 @@
           const list = getRssSources();
           rssListUl.innerHTML = '';
           if (list.length === 0) {
-            rssListUl.innerHTML = '<li style="border:none;color:#64748b;">Henüz kaynak eklenmedi.</li>';
+            rssListUl.innerHTML = '<li style="background:transparent; border:none; color:#777;">Henüz kaynak eklenmedi.</li>';
             return;
           }
           list.forEach((url, index) => {
             const li = document.createElement('li');
-            const shortUrl = url.replace('https://', '').replace('http://', '').substring(0, 35) + '...';
+            const shortUrl = url.replace('https://', '').replace('http://', '').substring(0, 35) + (url.length > 35 ? '...' : '');
             li.innerHTML = `<span title="${url}">${shortUrl}</span><span class="delete-btn" data-index="${index}" data-type="rss">✕</span>`;
             rssListUl.appendChild(li);
           });
@@ -166,7 +397,7 @@
           const list = getKeywords();
           keywordListUl.innerHTML = '';
           if (list.length === 0) {
-            keywordListUl.innerHTML = '<li style="border:none;color:#64748b;">Henüz kelime eklenmedi.</li>';
+            keywordListUl.innerHTML = '<li style="background:transparent; border:none; color:#777;">Henüz kelime eklenmedi.</li>';
             return;
           }
           list.forEach((keyword, index) => {
@@ -197,25 +428,35 @@
             const base64Part = contents.split(',')[1];
             contents = atob(base64Part);
           }
-          if (!contents.includes('<item')) throw new Error('RSS item yok');
+          if (!contents.includes('<item') && !contents.includes('<entry')) throw new Error('RSS item yok');
           return { type: 'xml', data: contents };
         }
 
-        // === XML parse ===
+        // === XML parse (hem item hem entry destekli) ===
         function parseRSS(result, sourceUrl) {
           const articles = [];
           if (result.type === 'xml') {
             const parser = new DOMParser();
             const xml = parser.parseFromString(result.data, 'text/xml');
-            const channelTitle = xml.querySelector('channel > title');
-            const sourceName = channelTitle ? channelTitle.textContent.trim() : sourceUrl;
-            xml.querySelectorAll('item').forEach(item => {
-              const getText = (tag) => item.querySelector(tag)?.textContent.trim() || '';
+            const channelTitle = xml.querySelector('channel > title') || xml.querySelector('feed > title');
+            const sourceName = channelTitle ? channelTitle.textContent.trim() : new URL(sourceUrl).hostname;
+            const items = xml.querySelectorAll('item, entry');
+            items.forEach(item => {
+              const getText = (tag) => {
+                const el = item.querySelector(tag);
+                return el ? el.textContent.trim() : '';
+              };
+              // link farklı olabilir
+              let link = getText('link');
+              if (!link) {
+                const linkEl = item.querySelector('link[href]');
+                if (linkEl) link = linkEl.getAttribute('href');
+              }
               articles.push({
                 title: getText('title'),
-                link: getText('link'),
-                pubDate: getText('pubDate'),
-                description: getText('description'),
+                link: link,
+                pubDate: getText('pubDate') || getText('updated') || getText('published'),
+                description: getText('description') || getText('summary'),
                 sourceName: sourceName
               });
             });
@@ -236,7 +477,7 @@
         function renderNews(articles) {
           newsContainer.innerHTML = '';
           if (articles.length === 0) {
-            newsContainer.innerHTML = '<p>Anahtar kelimelerinize uyan haber bulunamadı.</p>';
+            newsContainer.innerHTML = '<p style="color:#777; text-align:center;">🔍 Anahtar kelimelerinize uyan haber bulunamadı.</p>';
             return;
           }
           articles.forEach(article => {
@@ -258,7 +499,7 @@
             card.innerHTML = `
               <div class="news-source">${article.sourceName}</div>
               <div class="news-title">${article.title}</div>
-              ${dateStr ? `<div class="news-date">🕐 ${dateStr}</div>` : ''}
+              ${dateStr ? `<div class="news-date"><span>🕐</span> ${dateStr}</div>` : ''}
             `;
             newsContainer.appendChild(card);
           });
@@ -286,7 +527,7 @@
               allArticles.push(...articles);
             } catch (e) {
               errors.push(url);
-              console.error(e);
+              console.error(`Hata: ${url}`, e);
             }
           }
 
@@ -294,7 +535,19 @@
           const filtered = filterArticles(allArticles, keywords);
           loadingMsg.style.display = 'none';
           renderNews(filtered);
-          if (errors.length > 0) console.warn('Yüklenemeyen kaynaklar:', errors);
+          if (errors.length > 0) {
+            console.warn('Yüklenemeyen kaynaklar:', errors);
+            // Kullanıcıya hafif bir uyarı göster (isteğe bağlı)
+            const warnMsg = document.createElement('div');
+            warnMsg.style.backgroundColor = '#e9411a20';
+            warnMsg.style.color = '#e9411a';
+            warnMsg.style.padding = '10px';
+            warnMsg.style.borderRadius = '12px';
+            warnMsg.style.marginBottom = '10px';
+            warnMsg.style.fontSize = '0.9rem';
+            warnMsg.innerHTML = `⚠️ ${errors.length} kaynak yüklenemedi. Konsola bak.`;
+            newsContainer.prepend(warnMsg);
+          }
         });
 
         // === Başlangıç render ===
@@ -304,8 +557,8 @@
     })();
   </script>
 
+  <!-- Service Worker kaydı (isteğe bağlı) -->
   <script>
-    // Service Worker kaydı (ayrı scriptte olmasında sakınca yok)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('service-worker.js')
